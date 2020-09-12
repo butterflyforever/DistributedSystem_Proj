@@ -1,6 +1,6 @@
 # Assignment 2: Primary/Backup Key/Value Service
-### Part A Due: Friday Oct 5, 11:59:59pm
-### Part B Due: Friday Oct 12, 11:59:59pm
+### Part A Due: Wednesday Oct 7, 11:59:59pm
+### Part B Due: Wednesday Oct 14, 11:59:59pm
 
 ### Introduction
 
@@ -488,4 +488,4 @@ of calculating late days and we will only grade that version of the code.
 
 ### Questions
 
-Please post questions on [Piazza](https://www.piazza.com/columbia/fall2017/comsw4113/home).
+Please post questions on [Piazza](https://piazza.com/class/keyew99znqn2dl).

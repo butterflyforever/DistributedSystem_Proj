@@ -1,6 +1,6 @@
 # Assignment 4: Sharded Key/Value Service
-### Part A Due: Wednesday Nov 30, 11:59:59pm
-### Part B Due: Wednesday Dec 7, 11:59:59pm
+### Part A Due: Wednesday Nov 18, 11:59:59pm
+### Part B Due: Wednesday Dec 2, 11:59:59pm
 
 ### Introduction
 
@@ -333,4 +333,4 @@ of calculating late days and we will only grade that version of the code.
 
 ### Questions
 
-Please post questions on [Piazza](https://www.piazza.com/columbia/fall2017/comsw4113/home).
+Please post questions on [Piazza](https://piazza.com/class/keyew99znqn2dl).

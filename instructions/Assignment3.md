@@ -1,6 +1,6 @@
 # Assignment 3: Paxos-based Key/Value Service
-### Part A Due: Friday Nov 2, 11:59:59pm
-### Part B Due: Friday Nov 9, 11:59:59pm
+### Part A Due: Wednesday Oct 28, 11:59:59pm
+### Part B Due: Thursday Nov 5, 11:59:59pm
 
 ### Introduction
 
@@ -443,4 +443,4 @@ of calculating late days and we will only grade that version of the code.
 
 ### Questions
 
-Please post questions on [Piazza](https://www.piazza.com/columbia/fall2017/comsw4113/home).
+Please post questions on [Piazza](https://piazza.com/class/keyew99znqn2dl).

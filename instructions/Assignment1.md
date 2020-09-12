@@ -1,5 +1,5 @@
 # Assignment 1: MapReduce
-### Due: Friday Sep 21, 11:59:59pm
+### Due: Wednesday Sep 23, 11:59:59pm
 
 ### Introduction
 
@@ -278,4 +278,4 @@ code. (We'll also know if you backdate the tag, don't do that.)
 
 ### Questions
 
-Please post questions on [Piazza](https://www.piazza.com/columbia/fall2017/comsw4113/home).
+Please post questions on [Piazza](https://piazza.com/class/keyew99znqn2dl).
