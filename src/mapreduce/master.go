@@ -76,6 +76,7 @@ func (mr *MapReduce) assignTasks(workerAddr string, wg *sync.WaitGroup) {
 			ok := call(workerAddr, "Worker.DoJob", jobArgs, reply)
 			if ok == false {
 				fmt.Printf("DoJob: RPC %s DoJob %s error\n", workerAddr, jobArgs.Operation)
+				mr.taskChannel <- jobArgs
 			} else {
 				fmt.Printf("DoJob: RPC %s DoJob %s success\n", workerAddr, jobArgs.Operation)
 				wg.Done()
