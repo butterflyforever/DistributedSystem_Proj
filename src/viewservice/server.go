@@ -70,6 +70,11 @@ func (vs *ViewServer) Ping(args *PingArgs, reply *PingReply) error {
 			}
 		}
 
+	} else if vs.curView.Primary != "" && serverName != vs.curView.Primary && vs.curView.Backup == "" && vs.curViewAcked {
+		// As a backup
+		vs.curView.Backup = serverName
+		vs.curView.Viewnum++
+		vs.curViewAcked = false
 	} else if serverViewNum == vs.curView.Viewnum && serverName == vs.curView.Primary {
 		vs.curViewAcked = true
 	}
@@ -86,7 +91,6 @@ func (vs *ViewServer) Ping(args *PingArgs, reply *PingReply) error {
 func (vs *ViewServer) Get(args *GetArgs, reply *GetReply) error {
 
 	// Your code here.
-	// Do I need to lock mutex?
 	vs.mu.Lock()
 	reply.View = vs.curView
 	vs.mu.Unlock()
