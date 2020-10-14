@@ -224,11 +224,12 @@ func (pb *PBServer) Get(args *GetArgs, reply *GetReply) error {
 		reply.Value = val
 	} else {
 
+		forwardReply := GetReply{}
+		forwardReply.Err = ""
+		forwardReply.Value = ""
+
 		if pb.curView.Backup != "" {
 			ok := true
-			forwardReply := GetReply{}
-			forwardReply.Err = ""
-			forwardReply.Value = ""
 
 			// Debug
 			fmt.Printf("Get call GetForward, key %s, id %d\n", args.Key, args.Id)
@@ -253,27 +254,23 @@ func (pb *PBServer) Get(args *GetArgs, reply *GetReply) error {
 
 		// TOCHECK: Do I need to save ErrNoKey to record? Now Do not save
 
-		// Success, do Get in local database
-		// if reply.Err == ErrNoKey, just return.
-		if reply.Err == OK {
-			// Key must exist
+		// No Backup or Backup Success, do Get in local database
+		// if reply.Err != OK, just return.
+		if forwardReply.Err == "" {
+			// No backup, only primary
 			if v, e := pb.data[args.Key]; !e {
 				reply.Err = ErrNoKey
 				reply.Value = ""
 			} else {
 				reply.Value = v
-
-				//
-				// I don't check pb.data[args.Key] == forwardReply.Value here
-				// Because client's Put is called repeatly until Backup's Put successes.
-				// No need to consider client call GET before PUT successing,
-				// it is insoluble
-				//
-
 				// Save this request to record
 				pb.records[args.Id] = v
 			}
-
+		} else if reply.Err == OK {
+			// replace primary with backup value
+			pb.data[args.Key] = forwardReply.Value
+			pb.records[args.Id] = forwardReply.Value
+			reply.Value = forwardReply.Value
 		}
 	}
 	return nil
