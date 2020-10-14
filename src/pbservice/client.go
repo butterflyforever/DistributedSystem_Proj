@@ -1,30 +1,30 @@
 package pbservice
 
-import "viewservice"
-import "net/rpc"
-import "fmt"
+import (
+	"crypto/rand"
+	"fmt"
+	"math/big"
+	"net/rpc"
+	"viewservice"
+)
 
 // You'll probably need to uncomment these:
 // import "time"
 // import "crypto/rand"
 // import "math/big"
 
-
-
 type Clerk struct {
-  vs *viewservice.Clerk
-  // Your declarations here
+	vs *viewservice.Clerk
+	// Your declarations here
 }
-
 
 func MakeClerk(vshost string, me string) *Clerk {
-  ck := new(Clerk)
-  ck.vs = viewservice.MakeClerk(me, vshost)
-  // Your ck.* initializations here
+	ck := new(Clerk)
+	ck.vs = viewservice.MakeClerk(me, vshost)
+	// Your ck.* initializations here
 
-  return ck
+	return ck
 }
-
 
 //
 // call() sends an RPC to the rpcname handler on server srv
@@ -43,20 +43,20 @@ func MakeClerk(vshost string, me string) *Clerk {
 // please don't change this function.
 //
 func call(srv string, rpcname string,
-          args interface{}, reply interface{}) bool {
-  c, errx := rpc.Dial("unix", srv)
-  if errx != nil {
-    return false
-  }
-  defer c.Close()
-    
-  err := c.Call(rpcname, args, reply)
-  if err == nil {
-    return true
-  }
+	args interface{}, reply interface{}) bool {
+	c, errx := rpc.Dial("unix", srv)
+	if errx != nil {
+		return false
+	}
+	defer c.Close()
 
-  fmt.Println(err)
-  return false
+	err := c.Call(rpcname, args, reply)
+	if err == nil {
+		return true
+	}
+
+	fmt.Println(err)
+	return false
 }
 
 //
@@ -67,10 +67,25 @@ func call(srv string, rpcname string,
 // says the key doesn't exist (has never been Put().
 //
 func (ck *Clerk) Get(key string) string {
+	args := &GetArgs{}
+	var reply GetReply
+	args.Key = key
+	args.Id = nrand()
+	ok := false
+	for ok == false {
+		vsView, _ := ck.vs.Get()
+		args.Viewnum = vsView.Viewnum
+		reply.Err = ""
+		reply.Value = ""
+		ok = call(vsView.Primary, "PBServer.Get", args, &reply)
+		if reply.Err != OK && reply.Err != ErrNoKey {
+			ok = false
+		}
+	}
 
-  // Your code here.
-
-  return "???"
+	// Your code here.
+	// If key doesn't exist, set Value = ""
+	return reply.Value
 }
 
 //
@@ -79,14 +94,43 @@ func (ck *Clerk) Get(key string) string {
 //
 func (ck *Clerk) PutExt(key string, value string, dohash bool) string {
 
-  // Your code here.
-  return "???"
+	// Your code here.
+	args := &PutArgs{}
+	var reply PutReply
+	args.Key = key
+	args.Value = value
+	args.DoHash = dohash
+	args.Id = nrand()
+	ok := false
+	for ok == false {
+		vsView, _ := ck.vs.Get()
+		args.Viewnum = vsView.Viewnum
+		reply.Err = ""
+		reply.PreviousValue = ""
+		ok = call(vsView.Primary, "PBServer.Put", args, &reply)
+		if reply.Err != OK {
+			ok = false
+		}
+	}
+	// fmt.Printf("Client %t\n", ok)
+	if dohash {
+		return reply.PreviousValue
+	} else {
+		return value
+	}
 }
 
 func (ck *Clerk) Put(key string, value string) {
-  ck.PutExt(key, value, false)
+	ck.PutExt(key, value, false)
 }
 func (ck *Clerk) PutHash(key string, value string) string {
-  v := ck.PutExt(key, value, true)
-  return v
+	v := ck.PutExt(key, value, true)
+	return v
+}
+
+func nrand() int64 {
+	max := big.NewInt(int64(1) << 62)
+	bigx, _ := rand.Int(rand.Reader, max)
+	x := bigx.Int64()
+	return x
 }
