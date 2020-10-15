@@ -77,7 +77,7 @@ func (pb *PBServer) Put(args *PutArgs, reply *PutReply) error {
 			forwardReply.PreviousValue = ""
 
 			// Debug
-			fmt.Printf("Put call PutForward, key %s, value %s, id %d\n", args.Key, args.Value, args.Id)
+			// fmt.Printf("Put call PutForward, key %s, value %s, id %d\n", args.Key, args.Value, args.Id)
 			//
 
 			ok = call(pb.curView.Backup, "PBServer.PutForward", args, &forwardReply)
@@ -88,7 +88,7 @@ func (pb *PBServer) Put(args *PutArgs, reply *PutReply) error {
 			reply.Err = forwardReply.Err
 
 			// Debug
-			fmt.Printf("Put call PutForward have result, key %s, result %s, id %d, reply.Err %s\n", args.Key, args.Value, args.Id, reply.Err)
+			// fmt.Printf("Put call PutForward have result, key %s, result %s, id %d, reply.Err %s\n", args.Key, args.Value, args.Id, reply.Err)
 			//
 			// fmt.Printf("Put %t, Err %s\n", ok, reply.Err)
 
@@ -111,7 +111,7 @@ func (pb *PBServer) Put(args *PutArgs, reply *PutReply) error {
 				pb.records[args.Id] = preVal
 
 				// Debug
-				fmt.Printf("Put Prevalue, key %s, value %s, id %d, preVal %s\n", args.Key, args.Value, args.Id, preVal)
+				// fmt.Printf("Put Prevalue, key %s, value %s, id %d, preVal %s\n", args.Key, args.Value, args.Id, preVal)
 				//
 
 			} else {
@@ -123,7 +123,7 @@ func (pb *PBServer) Put(args *PutArgs, reply *PutReply) error {
 			}
 
 			// Debug
-			fmt.Printf("Put local result, key %s, result %s, id %d, reply.Err %s\n", args.Key, pb.data[args.Key], args.Id, reply.Err)
+			// fmt.Printf("Put local result, key %s, result %s, id %d, reply.Err %s\n", args.Key, pb.data[args.Key], args.Id, reply.Err)
 			//
 
 		}
@@ -152,7 +152,7 @@ func (pb *PBServer) PutForward(args *PutArgs, reply *PutReply) error {
 	}
 
 	// Debug
-	fmt.Printf("PutForward get request, key %s, value %s, id %d\n", args.Key, args.Value, args.Id)
+	// fmt.Printf("PutForward get request, key %s, value %s, id %d\n", args.Key, args.Value, args.Id)
 	//
 
 	// Filter repeated PUT requests
@@ -188,7 +188,7 @@ func (pb *PBServer) PutForward(args *PutArgs, reply *PutReply) error {
 	}
 
 	// Debug
-	fmt.Printf("PutForward local result, key %s, value %s, id %d, result %s, preValue %s\n", args.Key, args.Value, args.Id, pb.data[args.Key], reply.PreviousValue)
+	// fmt.Printf("PutForward local result, key %s, value %s, id %d, result %s, preValue %s\n", args.Key, args.Value, args.Id, pb.data[args.Key], reply.PreviousValue)
 	//
 
 	reply.Err = OK
@@ -231,7 +231,7 @@ func (pb *PBServer) Get(args *GetArgs, reply *GetReply) error {
 			ok := true
 
 			// Debug
-			fmt.Printf("Get call GetForward, key %s, id %d\n", args.Key, args.Id)
+			// fmt.Printf("Get call GetForward, key %s, id %d\n", args.Key, args.Id)
 			//
 
 			ok = call(pb.curView.Backup, "PBServer.GetForward", args, &forwardReply)
@@ -244,7 +244,7 @@ func (pb *PBServer) Get(args *GetArgs, reply *GetReply) error {
 			reply.Value = forwardReply.Value
 
 			// Debug
-			fmt.Printf("Result : Get call GetForward, key %s, id %d, reply.Err %s. Result is %s\n", args.Key, args.Id, reply.Err, reply.Value)
+			// fmt.Printf("Result : Get call GetForward, key %s, id %d, reply.Err %s. Result is %s\n", args.Key, args.Id, reply.Err, reply.Value)
 			//
 
 		} else {
@@ -292,7 +292,7 @@ func (pb *PBServer) GetForward(args *GetArgs, reply *GetReply) error {
 	}
 
 	// Debug
-	fmt.Printf("GetForward: key %s, id %d\n", args.Key, args.Id)
+	// fmt.Printf("GetForward: key %s, id %d\n", args.Key, args.Id)
 	//
 
 	// if val, exist := pb.records[args.Id]; exist {
