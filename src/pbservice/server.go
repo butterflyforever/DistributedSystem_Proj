@@ -155,14 +155,13 @@ func (pb *PBServer) PutForward(args *PutArgs, reply *PutReply) error {
 	fmt.Printf("PutForward get request, key %s, value %s, id %d\n", args.Key, args.Value, args.Id)
 	//
 
-	// Do not filter repeated requests
-	// if val, exist := pb.records[args.Id]; exist {
-	// 	// Filter repeated requests
-	// 	reply.PreviousValue = val
-	// } else {
-	// 	// Do put in local database
-
-	// }
+	// Filter repeated PUT requests
+	if val, exist := pb.records[args.Id]; exist {
+		// Filter repeated requests
+		reply.PreviousValue = val
+		reply.Err = OK
+		return nil
+	}
 
 	if args.DoHash {
 		preVal, preEx := pb.data[args.Key]
