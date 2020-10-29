@@ -200,7 +200,7 @@ func (px *Paxos) Propose(seq int, v interface{}) {
 	}
 
 	//Debug
-	fmt.Printf("propose\n")
+	// fmt.Printf("propose\n")
 
 	base := 0
 	for targetIns := px.getInstance(seq); targetIns.isDecided == false; {
@@ -212,7 +212,7 @@ func (px *Paxos) Propose(seq int, v interface{}) {
 		N := generateN(base, px.me)
 
 		//Debug
-		fmt.Printf("propose number N: %d, seq %d\n", N, seq)
+		// fmt.Printf("propose number N: %d, seq %d\n", N, seq)
 
 		maxNFromAcceptors := -1
 		prepareMajorityOK := false
@@ -277,9 +277,9 @@ func (px *Paxos) Propose(seq int, v interface{}) {
 		}
 
 		//Debug
-		fmt.Printf("vPrime: %s\n", vPrime)
+		// fmt.Printf("vPrime: %s\n", vPrime)
 
-		fmt.Printf("prepare OK: %t\n", prepareMajorityOK)
+		// fmt.Printf("prepare OK: %t\n", prepareMajorityOK)
 
 		// TODO - Do we need Paxo's Timeout? or just RPC timeout
 
@@ -396,7 +396,7 @@ func (px *Paxos) Prepare(args *PrepareArgs, reply *PrepareReply) error {
 		reply.Va = targetIns.va
 
 		//debug
-		fmt.Printf("Prepare isDecided=%t, va=%v, me=%d, sender=%d, seq %d\n", targetIns.isDecided, targetIns.va, px.me, args.Sender, args.Seq)
+		// fmt.Printf("Prepare isDecided=%t, va=%v, me=%d, sender=%d, seq %d\n", targetIns.isDecided, targetIns.va, px.me, args.Sender, args.Seq)
 
 	} else {
 		reply.Err = Stale
@@ -435,7 +435,7 @@ func (px *Paxos) Accept(args *AcceptArgs, reply *AcceptReply) error {
 		reply.Err = OK
 
 		//debug
-		fmt.Printf("Accept isDecided=%t, va=%v, me=%d, sender=%d, seq %d\n", targetIns.isDecided, targetIns.va, px.me, args.Sender, args.Seq)
+		// fmt.Printf("Accept isDecided=%t, va=%v, me=%d, sender=%d, seq %d\n", targetIns.isDecided, targetIns.va, px.me, args.Sender, args.Seq)
 
 	} else {
 		reply.Err = Stale
@@ -475,7 +475,7 @@ func (px *Paxos) Decided(args *DecidedArgs, reply *DecidedReply) error {
 	reply.Err = OK
 
 	//debug
-	fmt.Printf("decided v=%v, sender=%d, me=%d, seq=%d\n", px.instances[args.Seq].va, args.Sender, px.me, args.Seq)
+	// fmt.Printf("decided v=%v, sender=%d, me=%d, seq=%d\n", px.instances[args.Seq].va, args.Sender, px.me, args.Seq)
 
 	return nil
 }
@@ -575,7 +575,7 @@ func (px *Paxos) Status(seq int) (bool, interface{}) {
 		return false, nil
 	} else {
 		//debug
-		fmt.Printf("Status: isDecided=%t, va=%v, me=%d, seq %d\n", targetIns.isDecided, targetIns.vDecided, px.me, seq)
+		// fmt.Printf("Status: isDecided=%t, va=%v, me=%d, seq %d\n", targetIns.isDecided, targetIns.vDecided, px.me, seq)
 		return targetIns.isDecided, targetIns.vDecided
 	}
 }
