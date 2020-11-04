@@ -49,18 +49,13 @@ type KVPaxos struct {
 	px         *paxos.Paxos
 
 	// Your definitions here.
-	history   map[int64]*CachedInfo
+	history   map[int64]string
 	data      map[string]string
 	curMaxSeq int
 }
 
-type CachedInfo struct {
-	Value string
-	Seq   int
-}
-
 func (kv *KVPaxos) Get(args *GetArgs, reply *GetReply) error {
-	// Your code here.
+
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
 
@@ -69,11 +64,11 @@ func (kv *KVPaxos) Get(args *GetArgs, reply *GetReply) error {
 	if isCached {
 		// if ErrNoKey, also let Err=OK
 		reply.Err = OK
-		reply.Value = cachedValue.Value
+		reply.Value = cachedValue
 
 		//debug
 		DPrintf("CachedGet id=%d, key=%s, value=%s, me=%d\n",
-			args.Id, args.Key, cachedValue.Value, kv.me)
+			args.Id, args.Key, cachedValue, kv.me)
 
 		return nil
 	}
@@ -110,39 +105,11 @@ func (kv *KVPaxos) Get(args *GetArgs, reply *GetReply) error {
 				v.Value = curValue
 			}
 
-			cachedInfo := CachedInfo{}
-			cachedInfo.Seq = seq
-			cachedInfo.Value = curValue
-			kv.history[op.OpID] = &cachedInfo
-			// kv.releaseMem(seq)
+			kv.history[op.OpID] = curValue
 			kv.px.Done(seq)
 			break
 		} else {
-			cachedInfo := CachedInfo{}
-			cachedInfo.Seq = seq
-			// update the database
-			if v.OpType == PUT {
-				kv.data[v.Key] = v.Value
-
-				cachedInfo.Value = v.Value
-				kv.history[v.OpID] = &cachedInfo
-			} else if v.OpType == PUTHASH {
-				preValue, preEx := kv.data[v.Key]
-				if preEx == false {
-					preValue = ""
-				}
-				kv.data[v.Key] = strconv.FormatUint(uint64(hash(preValue+v.Value)), 10)
-				cachedInfo.Value = preValue
-				kv.history[v.OpID] = &cachedInfo
-			} else if v.OpType == GET {
-				cachedInfo.Value = kv.data[v.Key]
-				kv.history[v.OpID] = &cachedInfo
-			} else {
-				// Release
-				// No need to remove repeated
-				kv.history[v.ReleaseID].Value = ""
-				// delete(kv.history, v.ReleaseID)
-			}
+			kv.catchUp(&v)
 		}
 
 	}
@@ -159,11 +126,11 @@ func (kv *KVPaxos) Put(args *PutArgs, reply *PutReply) error {
 	cachedValue, isCached := kv.history[args.Id]
 	if isCached {
 		reply.Err = OK
-		reply.PreviousValue = cachedValue.Value
+		reply.PreviousValue = cachedValue
 
 		//debug
 		DPrintf("CachedPut id=%d, dohash=%t, key=%s, value=%s, preValue=%s, me=%d\n",
-			args.Id, args.DoHash, args.Key, args.Value, cachedValue.Value, kv.me)
+			args.Id, args.DoHash, args.Key, args.Value, cachedValue, kv.me)
 
 		return nil
 	}
@@ -189,8 +156,6 @@ func (kv *KVPaxos) Put(args *PutArgs, reply *PutReply) error {
 
 		kv.px.Start(seq, op)
 		v := kv.waitForDecided(seq)
-		cachedInfo := CachedInfo{}
-		cachedInfo.Seq = seq
 
 		// debug
 		DPrintf("PutMakeup id=%d, type=%s, key=%s, value=%s, preValue=%s, me=%d, seq=%d\n",
@@ -210,73 +175,23 @@ func (kv *KVPaxos) Put(args *PutArgs, reply *PutReply) error {
 				reply.PreviousValue = preValue
 
 				// save to history
-				// v.PreviousValue = preValue
-				cachedInfo.Value = preValue
-				kv.history[op.OpID] = &cachedInfo
+				kv.history[op.OpID] = preValue
 			} else {
 				kv.data[op.Key] = op.Value
 				reply.Err = OK
 				reply.PreviousValue = ""
 
 				// save to history
-				// v.PreviousValue = ""
-				cachedInfo.Value = ""
-				kv.history[op.OpID] = &cachedInfo
+				kv.history[op.OpID] = ""
 			}
-			// kv.releaseMem(seq)
 			kv.px.Done(seq)
 			break
 		} else {
-			// update the database
-			if v.OpType == PUT {
-				kv.data[v.Key] = v.Value
-				cachedInfo.Value = v.Value
-				kv.history[v.OpID] = &cachedInfo
-			} else if v.OpType == PUTHASH {
-				preValue, preEx := kv.data[v.Key]
-				if preEx == false {
-					preValue = ""
-				}
-				kv.data[v.Key] = strconv.FormatUint(uint64(hash(preValue+v.Value)), 10)
-				cachedInfo.Value = preValue
-				kv.history[v.OpID] = &cachedInfo
-			} else if v.OpType == GET {
-				cachedInfo.Value = kv.data[v.Key]
-				kv.history[v.OpID] = &cachedInfo
-			} else {
-				// Release
-				// No need to remove repeated
-				kv.history[v.ReleaseID].Value = ""
-				// delete(kv.history, v.ReleaseID)
-			}
+			kv.catchUp(&v)
 		}
 	}
 
 	return nil
-}
-
-func (kv *KVPaxos) waitForDecided(seq int) Op {
-	to := 10 * time.Millisecond
-	for {
-		decided, v := kv.px.Status(seq)
-		if decided {
-			return v.(Op)
-		}
-		time.Sleep(to)
-		if to < 10*time.Second {
-			to *= 2
-		}
-	}
-}
-
-func (kv *KVPaxos) releaseMem(seq int) {
-	kv.px.Done(seq)
-	// forget := make([]int64, 0)
-	for id, op := range kv.history {
-		if op.Seq <= seq {
-			kv.history[id].Value = ""
-		}
-	}
 }
 
 func (kv *KVPaxos) Release(args *RelArgs, reply *RelReply) error {
@@ -305,42 +220,54 @@ func (kv *KVPaxos) Release(args *RelArgs, reply *RelReply) error {
 		if v.OpID == op.OpID {
 			// reach the agreement
 			// delete(kv.history, op.ReleaseID)
-			kv.history[v.ReleaseID].Value = ""
+			kv.history[v.ReleaseID] = ""
 			reply.Err = OK
 			kv.px.Done(seq)
 			break
 		} else {
-			cachedInfo := CachedInfo{}
-			cachedInfo.Seq = seq
-			// update the database
-			if v.OpType == PUT {
-				kv.data[v.Key] = v.Value
-
-				cachedInfo.Value = v.Value
-				kv.history[v.OpID] = &cachedInfo
-			} else if v.OpType == PUTHASH {
-				preValue, preEx := kv.data[v.Key]
-				if preEx == false {
-					preValue = ""
-				}
-				kv.data[v.Key] = strconv.FormatUint(uint64(hash(preValue+v.Value)), 10)
-				cachedInfo.Value = preValue
-				kv.history[v.OpID] = &cachedInfo
-			} else if v.OpType == GET {
-				cachedInfo.Value = kv.data[v.Key]
-				kv.history[v.OpID] = &cachedInfo
-			} else {
-				// Release
-				// No need to remove repeated
-				// delete(kv.history, v.ReleaseID)
-				kv.history[v.ReleaseID].Value = ""
-			}
+			kv.catchUp(&v)
 		}
 
 	}
 
 	return nil
 
+}
+
+func (kv *KVPaxos) catchUp(v *Op) {
+	// update the database
+	if v.OpType == PUT {
+		kv.data[v.Key] = v.Value
+
+		kv.history[v.OpID] = v.Value
+	} else if v.OpType == PUTHASH {
+		preValue, preEx := kv.data[v.Key]
+		if preEx == false {
+			preValue = ""
+		}
+		kv.data[v.Key] = strconv.FormatUint(uint64(hash(preValue+v.Value)), 10)
+		kv.history[v.OpID] = preValue
+	} else if v.OpType == GET {
+		kv.history[v.OpID] = kv.data[v.Key]
+	} else {
+		// Release
+		// No need to remove repeated
+		kv.history[v.ReleaseID] = ""
+	}
+}
+
+func (kv *KVPaxos) waitForDecided(seq int) Op {
+	to := 10 * time.Millisecond
+	for {
+		decided, v := kv.px.Status(seq)
+		if decided {
+			return v.(Op)
+		}
+		time.Sleep(to)
+		if to < 10*time.Second {
+			to *= 2
+		}
+	}
 }
 
 // tell the server to shut itself down.
@@ -367,7 +294,7 @@ func StartServer(servers []string, me int) *KVPaxos {
 	kv.me = me
 
 	// Your initialization code here.
-	kv.history = make(map[int64]*CachedInfo)
+	kv.history = make(map[int64]string)
 	kv.data = make(map[string]string)
 	kv.curMaxSeq = -1
 
