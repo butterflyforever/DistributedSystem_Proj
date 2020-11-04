@@ -103,7 +103,9 @@ func (ck *Clerk) PutExt(key string, value string, dohash bool) string {
 			ok := call(ck.servers[i], "KVPaxos.Put", args, reply)
 			if ok {
 				if reply.Err == OK {
-					ck.release(args.Id)
+					if dohash {
+						ck.release(args.Id)
+					}
 					return reply.PreviousValue
 				}
 			}
