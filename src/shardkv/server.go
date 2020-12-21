@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const Debug = 1
+const Debug = 0
 const GET = "GET"
 const PUT = "PUT"
 const PUTHASH = "PUTHASH"
@@ -140,6 +140,7 @@ func (kv *ShardKV) Put(args *PutArgs, reply *PutReply) error {
 	}
 
 	for {
+		// Do filter everytime to avoid duplicated operation during the cache tranferring
 		// filter
 		cachedValue, isCached := kv.history[key2shard(args.Key)][args.Id]
 		if isCached {
@@ -445,6 +446,8 @@ func (kv *ShardKV) ReceiveHelper(v *Op, reply *ReceiveReply) {
 	DPrintf("ReceiveHelper vid=%d, vtype=%s, shardNum=%d, shard=%v, kv.isHold=%v, me=%d, gid=%d\n",
 		v.OpID, v.OpType, v.ShardNum, v.Shard, kv.isHold, kv.me, kv.gid)
 
+	// v is a reference. Must deep copy it! Otherwise we will change the value
+	// in paxos!!!
 	kv.shards[v.ShardNum] = make(map[string]string)
 	for k, value := range v.Shard {
 		kv.shards[v.ShardNum][k] = value
