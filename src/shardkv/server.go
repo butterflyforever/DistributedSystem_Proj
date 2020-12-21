@@ -73,25 +73,25 @@ func (kv *ShardKV) Get(args *GetArgs, reply *GetReply) error {
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
 
-	// filter
-	cachedValue, isCached := kv.history[key2shard(args.Key)][args.Id]
-	if isCached {
-		reply.Err = OK
-		reply.Value = cachedValue
-
-		//debug
-		DPrintf("CachedGet id=%d, key=%s, cachedValue=%s, me=%d, gid=%v\n",
-			args.Id, args.Key, cachedValue, kv.me, kv.gid)
-
-		return nil
-	}
-
 	op := Op{}
 	op.OpType = GET
 	op.OpID = args.Id
 	op.Key = args.Key
 
 	for {
+		// filter
+		cachedValue, isCached := kv.history[key2shard(args.Key)][args.Id]
+		if isCached {
+			reply.Err = OK
+			reply.Value = cachedValue
+
+			//debug
+			DPrintf("CachedGet id=%d, key=%s, cachedValue=%s, me=%d, gid=%v\n",
+				args.Id, args.Key, cachedValue, kv.me, kv.gid)
+
+			return nil
+		}
+
 		kv.curMaxSeq++
 		seq := kv.curMaxSeq
 
@@ -128,19 +128,6 @@ func (kv *ShardKV) Put(args *PutArgs, reply *PutReply) error {
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
 
-	// filter
-	cachedValue, isCached := kv.history[key2shard(args.Key)][args.Id]
-	if isCached {
-		reply.Err = OK
-		reply.PreviousValue = cachedValue
-
-		//debug
-		DPrintf("CachedPut id=%d, dohash=%t, key=%s, value=%s, preValue=%s, me=%d, gid=%d\n",
-			args.Id, args.DoHash, args.Key, args.Value, cachedValue, kv.me, kv.gid)
-
-		return nil
-	}
-
 	op := Op{}
 	op.OpID = args.Id
 	op.Key = args.Key
@@ -153,6 +140,19 @@ func (kv *ShardKV) Put(args *PutArgs, reply *PutReply) error {
 	}
 
 	for {
+		// filter
+		cachedValue, isCached := kv.history[key2shard(args.Key)][args.Id]
+		if isCached {
+			reply.Err = OK
+			reply.PreviousValue = cachedValue
+
+			//debug
+			DPrintf("CachedPut id=%d, dohash=%t, key=%s, value=%s, preValue=%s, me=%d, gid=%d\n",
+				args.Id, args.DoHash, args.Key, args.Value, cachedValue, kv.me, kv.gid)
+
+			return nil
+		}
+
 		kv.curMaxSeq++
 		seq := kv.curMaxSeq
 
@@ -195,19 +195,6 @@ func (kv *ShardKV) Receive(args *ReceiveArgs, reply *ReceiveReply) error {
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
 
-	// filter
-	// args.Id should be viewNum + shards num
-	_, isCached := kv.history[args.ShardNum][args.Id]
-	if isCached {
-		reply.Err = OK
-
-		//debug
-		DPrintf("CachedReceive id=%d, shardNum=%v, me=%d, gid=%d\n",
-			args.Id, args.ShardNum, kv.me, kv.gid)
-
-		return nil
-	}
-
 	op := Op{}
 	op.OpType = RECEIVE
 	op.OpID = args.Id
@@ -228,6 +215,19 @@ func (kv *ShardKV) Receive(args *ReceiveArgs, reply *ReceiveReply) error {
 	// }
 
 	for {
+		// filter
+		// args.Id should be viewNum + shards num
+		_, isCached := kv.history[args.ShardNum][args.Id]
+		if isCached {
+			reply.Err = OK
+
+			//debug
+			DPrintf("CachedReceive id=%d, shardNum=%v, me=%d, gid=%d\n",
+				args.Id, args.ShardNum, kv.me, kv.gid)
+
+			return nil
+		}
+
 		kv.curMaxSeq++
 		seq := kv.curMaxSeq
 
